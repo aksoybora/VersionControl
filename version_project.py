@@ -8,7 +8,7 @@ import platform
 def main():
     try:
         if len (sys.argv) < 2:
-            print("\nHATA: Lutfen bir komut belirtin!\n")
+            print("\nHATA: Lutfen bir komut belirtin!!\n")
             return
         
         komut = sys.argv[1]
