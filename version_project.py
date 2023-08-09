@@ -23,9 +23,19 @@ def main():
             folder_name = os.path.join(workspace_path, folder_name)
             version_info_value = get_version_info(folder_name)
             save_to_json(folder_name, version_info_value, txt_read(folder_name))
-        
+
+        elif command == "restore":
+            if len (sys.argv) < 3:
+                print("\nPlease enter a client name!\n")
+
+            client_name = sys.argv[2]
+            version_name = sys.argv[3]
+            # ...
+
+            read_the_versions(client_name,version_name)
         else:
             print("\nERROR: Invalid command!\n")
+
     except Exception as e:
         print("Something went wrong:",e)
 
@@ -156,14 +166,26 @@ def save_to_json(folder_name, version_info, a={}):
             data[folder_name] = {}
 
         if "version " + version_info not in data[folder_name]:
-            data[folder_name]["version " + version_info] = {}
+            data[folder_name][version_info] = {}
 
-        data[folder_name]["version " + version_info].update(a)
+        data[folder_name][version_info].update(a)
 
         with open("output.json", "w") as json_file:
             json.dump(data, json_file, indent=3)
     except Exception as e:
         print("ERROR! save_to_json:",e)
+
+
+def read_the_versions(client_name, version_name):
+    try:
+        with open("output.json","r") as read_file:
+            json_info = json.load(read_file)
+    except FileNotFoundError:
+        print("JSON file not found!")
+
+    if json_info:
+        print("JSON İNFO BULDUM: \n", json_info)
+        print(json_info[client_name][version_name])
 
 
 if __name__ == "__main__":
