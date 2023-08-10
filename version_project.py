@@ -25,14 +25,20 @@ def main():
             save_to_json(folder_name, version_info_value, txt_read(folder_name))
 
         elif command == "restore":
-            if len (sys.argv) < 3:
+            if len(sys.argv) < 3:
                 print("\nPlease enter a client name!\n")
 
             client_name = sys.argv[2]
             version_name = sys.argv[3]
-            # ...
-
             read_the_versions(client_name,version_name)
+
+        elif command == "control":
+            if len(sys.argv) < 3:
+                print("\nPlease enter a client name!\n")
+
+            client_name = sys.argv[2]
+            control_version(client_name)
+
         else:
             print("\nERROR: Invalid command!\n")
 
@@ -44,8 +50,6 @@ def txt_read(folder_name):
     try:
         txt_file = "CMakeLists.txt"
         txt_path = os.path.join(folder_name, txt_file)
-
-        print("AAA" + txt_path)
 
         if os.path.exists(txt_path):
             with open(txt_path, "r") as file:
@@ -84,16 +88,13 @@ def read_received_values(file_path):
     try:
         if platform.system() == "Windows":
             file_path = file_path.replace("/", "\\")  # Ters slash'ları normal slash'a dönüştür
-            print("ilk ife girdim :P\n")
 
         version_h_path = os.path.join(workspace_path,file_path)
         version_h_path = os.path.join(version_h_path,'version.h')
-        print("BURADAYIM! "+version_h_path)
 
         if os.path.exists(version_h_path):
             with open(version_h_path,"r") as file3:
                 contents_of_version_h = file3.read()
-                print("ikinci ife girdim "+ contents_of_version_h)
                 return contents_of_version_h
         else:
             print("version.h not found: " + file_path)
@@ -172,6 +173,7 @@ def save_to_json(folder_name, version_info, a={}):
 
         with open("output.json", "w") as json_file:
             json.dump(data, json_file, indent=3)
+            print("\nWritten to JSON file.\n")
     except Exception as e:
         print("ERROR! save_to_json:",e)
 
@@ -183,10 +185,43 @@ def read_the_versions(client_name, version_name):
     except FileNotFoundError:
         print("JSON file not found!")
 
-    if json_info:
-        print("JSON İNFO BULDUM: \n", json_info)
+    if json_info[client_name][version_name]:
+        print("\nFound the json_info: \n", json_info)
         print(json_info[client_name][version_name])
+    else:
+        print("Wrong command!")
 
+
+# def control_version(client_name):
+#     try:
+#         with open("output.json","r") as control_file:
+#             control_versions = json.load(control_file)
+#     except FileNotFoundError:
+#         print("JSON file not found!")
+
+#     if control_versions:
+#         desired_control_versions = control_versions[client_name]
+#         versions_list = list(desired_control_versions.keys()) # Gets all version numbers as a list
+
+#     for i in range(len(versions_list)-1): # To compare successive versions
+#         old_version = versions_list[i]
+#         new_version = versions_list[i+1]
+
+#         old_files = desired_control_versions[old_version] # Old version file information
+#         new_files = desired_control_versions[new_version] # New version file information
+
+#         print(f"\n--- {old_version} vs {new_version} ---\n")
+
+#         # Compares version information for each file
+#         for control_file, old_version in old_files.items():
+#             new_version = new_files.get(control_file) # Check if the file is available in the new version
+#             if new_version:
+#                 if old_version != new_version:
+#                     print(f"File: {control_file} --> old version: {old_version} , new version: {new_version}")
+#                 else:
+#                     print(f"File: {control_file} --> No version change.")
+#             else:
+#                 print(f"File: {control_file} is not available in the new version.")
 
 if __name__ == "__main__":
     main()
