@@ -3,8 +3,10 @@ import os
 import re
 import json
 import platform
+from git import Repo
 
 workspace_path = ".."
+repo_path = "C:\\Users\\aksoy\\OneDrive\\Masaüstü\\workspace\\versioncontrol"
 
 def main():
     try:
@@ -32,18 +34,40 @@ def main():
             version_name = sys.argv[3]
             read_the_versions(client_name,version_name)
 
-        elif command == "control":
+
+        elif command == "checkout":
             if len(sys.argv) < 3:
-                print("\nPlease enter a client name!\n")
+                print("\nPlease specify a branch name to checkout!\n")
+                return
+            branch_name = sys.argv[2]
+            repo = Repo(repo_path)
+            git_checkout(repo, branch_name)
 
-            client_name = sys.argv[2]
-            control_version(client_name)
-
+        elif command == "status":
+            repo = Repo(repo_path)
+            git_status(repo)
+            
         else:
             print("\nERROR: Invalid command!\n")
 
     except Exception as e:
         print("Something went wrong:",e)
+
+
+def git_checkout(repo, branch_name):
+    try:
+        repo.git.checkout(branch_name)
+        print(f"Checked out to branch: {branch_name}")
+    except Exception as e:
+        print("Error: ", e)
+
+
+def git_status(repo):
+    try:
+        status = repo.git.status()
+        print("Git Status:\n", status)
+    except Exception as e:
+        print("Error: ", e)
 
 
 def txt_read(folder_name):
@@ -191,37 +215,6 @@ def read_the_versions(client_name, version_name):
     else:
         print("Wrong command!")
 
-
-# def control_version(client_name):
-#     try:
-#         with open("output.json","r") as control_file:
-#             control_versions = json.load(control_file)
-#     except FileNotFoundError:
-#         print("JSON file not found!")
-
-#     if control_versions:
-#         desired_control_versions = control_versions[client_name]
-#         versions_list = list(desired_control_versions.keys()) # Gets all version numbers as a list
-
-#     for i in range(len(versions_list)-1): # To compare successive versions
-#         old_version = versions_list[i]
-#         new_version = versions_list[i+1]
-
-#         old_files = desired_control_versions[old_version] # Old version file information
-#         new_files = desired_control_versions[new_version] # New version file information
-
-#         print(f"\n--- {old_version} vs {new_version} ---\n")
-
-#         # Compares version information for each file
-#         for control_file, old_version in old_files.items():
-#             new_version = new_files.get(control_file) # Check if the file is available in the new version
-#             if new_version:
-#                 if old_version != new_version:
-#                     print(f"File: {control_file} --> old version: {old_version} , new version: {new_version}")
-#                 else:
-#                     print(f"File: {control_file} --> No version change.")
-#             else:
-#                 print(f"File: {control_file} is not available in the new version.")
 
 if __name__ == "__main__":
     main()
