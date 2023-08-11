@@ -7,7 +7,8 @@ import subprocess
 from git import Repo
 
 workspace_path = ".."
-repo_path = "C:\\Users\\aksoy\\OneDrive\\Masaüstü\\workspace\\versioncontrol"
+#repo_path = "C:\\Users\\aksoy\\OneDrive\\Masaüstü\\workspace\\versioncontrol"
+repo_path = ".."
 
 def main():
     try:
@@ -29,20 +30,29 @@ def main():
 
         elif command == "restore":
             if len(sys.argv) < 3:
-                print("\nPlease enter a client name!\n")
+                print("\nPlease enter a repo name!\n")
 
-            client_name = sys.argv[2]
+            repo_name = sys.argv[2]
             version_name = sys.argv[3]
-            read_the_versions(client_name,version_name)
+            #read_the_versions(repo_name, version_name)
 
+            try:
+                with open("output.json","r") as read_file:
+                    json_info = json.load(read_file)
+                    deps = json_info[repo_name][version_name]
+                    
+                    change_exists = check_git_repos(deps)
 
-        elif command == "checkout":
-            if len(sys.argv) < 3:
-                print("\nPlease specify a branch name to checkout!\n")
-                return
-            branch_name = sys.argv[2]
-            repo = Repo(repo_path)
-            git_checkout(repo, branch_name)
+                    if change_exists:
+                        print("Change exists, aborting")
+                        return
+
+                    for dep in deps:
+                        version = deps[dep]
+                        repo = Repo(os.path.join(repo_path, dep))
+                        git_checkout(repo, "v" + version)
+            except FileNotFoundError:
+                print("JSON file not found!")
 
         elif command == "status":
             check_git_repos(repo_path)
@@ -53,21 +63,6 @@ def main():
     except Exception as e:
         print("Something went wrong:",e)
 
-def check_git_status_and_checkout(target_branch):
-    try:
-        # git status çıktısını al
-        status_output = subprocess.check_output(['git','status']).decode('utf-8')
-
-        # "nothing to commit, working tree clean" ifadesi varsa, yani bir değişiklik yoksa;
-        if "nothing to commit, working tree clean" in status_output:
-            print("There are no changes.")
-            subprocess.call(['git','checkout', target_branch]) # hedef branch'e geçiş yap
-        else:
-            print("There are changes that need to be committed or stashed.")
-    except subprocess.CalledProcessError as e:
-        print("An error occurred while checking git status:", e)
-
-
 def git_checkout(repo, branch_name):
     try:
         repo.git.checkout(branch_name)
@@ -76,30 +71,17 @@ def git_checkout(repo, branch_name):
         print("Error: ", e)
 
 
-def check_git_repos(directory):
-    # Verilen dizini dolaşmak için os.walk kullanılıyor
-    for root, dirs, files in os.walk(directory):
-        # Eğer ".git" dizini varsa, bir Git deposu bulunmuş demektir
-        if ".git" in dirs:
-            # Git deposunun tam yolunu oluşturun
-            git_repo_path = os.path.join(root, ".git")
-            repo_path = os.path.dirname(git_repo_path)
-            print(f"\nChecking repo at: {repo_path}")
+def check_git_repos(repo_list):
+    for elem in repo_list:
+        repo = os.path.join(repo_path, elem)
 
-            try:
-                # Git status komutunu çağırarak repodaki durumu kontrol et
-                status_output = subprocess.check_output(['git','status'], cwd=repo_path).decode('utf-8')
+        try:
+            # Git status komutunu çağırarak repodaki durumu kontrol et
+            status_output = subprocess.check_output(['git','status'], cwd=repo).decode('utf-8')
 
-                # Eğer çıktı boş değilse (yani değişiklik varsa)
-                if status_output.strip():
-                    print("Changes found.")
-                    return False
-            except subprocess.CalledProcessError as e:
-                print("An error occurred while checking git status:  ", e)
-
-    # Döngü tamamlandığında hiçbir değişiklik bulunmamış demektir
-    print("No changes found in any repository.")
-    return True
+            return not "nothing to commit, working tree clean" in status_output
+        except subprocess.CalledProcessError as e:
+            print("An error occurred while checking git status:  ", e)
 
 
 def txt_read(folder_name):
@@ -162,9 +144,9 @@ def read_received_values(file_path):
 def get_versions(contents_of_version_h):
     try:
         if contents_of_version_h:
-            majorv = re.search(r'#define\s+MAJOR_VERSION\s+(\d+)', contents_of_version_h)
-            minorv = re.search(r'#define\s+MINOR_VERSION\s+(\d+)', contents_of_version_h)
-            patchv = re.search(r'#define\s+PATCH_VERSION\s+(\d+)', contents_of_version_h)
+            majorv = re.search(r'#define\s\S+MAJOR_VERSION\s+(\d+)', contents_of_version_h)
+            minorv = re.search(r'#define\s\S+MINOR_VERSION\s+(\d+)', contents_of_version_h)
+            patchv = re.search(r'#define\s\S+PATCH_VERSION\s+(\d+)', contents_of_version_h)
 
             if majorv and minorv and patchv:
                 # Değeleri alıp istenen formatta versiyon bilgisini oluşturma
@@ -188,9 +170,9 @@ def get_version_info(folder_name):
                 with open(version_path,"r") as file2:
                     content = file2.read()
                     # Düzenli ifadeyle MAJOR_VERSION, MINOR_VERSION ve PATCH_VERSION değerlerini bulma
-                    major = re.search(r'#define\s+MAJOR_VERSION\s+(\d+)', content)
-                    minor = re.search(r'#define\s+MINOR_VERSION\s+(\d+)', content)
-                    patch = re.search(r'#define\s+PATCH_VERSION\s+(\d+)', content)
+                    major = re.search(r'#define\s\S+MAJOR_VERSION\s+(\d+)', content)
+                    minor = re.search(r'#define\s\S+MINOR_VERSION\s+(\d+)', content)
+                    patch = re.search(r'#define\s\S+PATCH_VERSION\s+(\d+)', content)
 
                     if major and minor and patch:
                         # Değeleri alıp istenen formatta versiyon bilgisini oluşturma
