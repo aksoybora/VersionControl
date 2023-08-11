@@ -7,7 +7,6 @@ import subprocess
 from git import Repo
 
 workspace_path = ".."
-#repo_path = "C:\\Users\\aksoy\\OneDrive\\Masaüstü\\workspace\\versioncontrol"
 repo_path = ".."
 
 def main():
@@ -34,7 +33,6 @@ def main():
 
             repo_name = sys.argv[2]
             version_name = sys.argv[3]
-            #read_the_versions(repo_name, version_name)
 
             try:
                 with open("output.json","r") as read_file:
@@ -214,20 +212,6 @@ def save_to_json(folder_name, version_info, a={}):
             print("\nWritten to JSON file.\n")
     except Exception as e:
         print("ERROR! save_to_json:",e)
-
-
-def read_the_versions(client_name, version_name):
-    try:
-        with open("output.json","r") as read_file:
-            json_info = json.load(read_file)
-    except FileNotFoundError:
-        print("JSON file not found!")
-
-    if json_info[client_name][version_name]:
-        print("\nFound the json_info: \n", json_info)
-        print(json_info[client_name][version_name])
-    else:
-        print("Wrong command!")
 
 
 if __name__ == "__main__":
