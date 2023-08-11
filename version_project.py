@@ -3,6 +3,7 @@ import os
 import re
 import json
 import platform
+import subprocess
 from git import Repo
 
 workspace_path = ".."
@@ -44,14 +45,27 @@ def main():
             git_checkout(repo, branch_name)
 
         elif command == "status":
-            repo = Repo(repo_path)
-            git_status(repo)
-            
+            check_git_repos(repo_path)
+
         else:
             print("\nERROR: Invalid command!\n")
 
     except Exception as e:
         print("Something went wrong:",e)
+
+def check_git_status_and_checkout(target_branch):
+    try:
+        # git status çıktısını al
+        status_output = subprocess.check_output(['git','status']).decode('utf-8')
+
+        # "nothing to commit, working tree clean" ifadesi varsa, yani bir değişiklik yoksa;
+        if "nothing to commit, working tree clean" in status_output:
+            print("There are no changes.")
+            subprocess.call(['git','checkout', target_branch]) # hedef branch'e geçiş yap
+        else:
+            print("There are changes that need to be committed or stashed.")
+    except subprocess.CalledProcessError as e:
+        print("An error occurred while checking git status:", e)
 
 
 def git_checkout(repo, branch_name):
@@ -62,12 +76,30 @@ def git_checkout(repo, branch_name):
         print("Error: ", e)
 
 
-def git_status(repo):
-    try:
-        status = repo.git.status()
-        print("Git Status:\n", status)
-    except Exception as e:
-        print("Error: ", e)
+def check_git_repos(directory):
+    # Verilen dizini dolaşmak için os.walk kullanılıyor
+    for root, dirs, files in os.walk(directory):
+        # Eğer ".git" dizini varsa, bir Git deposu bulunmuş demektir
+        if ".git" in dirs:
+            # Git deposunun tam yolunu oluşturun
+            git_repo_path = os.path.join(root, ".git")
+            repo_path = os.path.dirname(git_repo_path)
+            print(f"\nChecking repo at: {repo_path}")
+
+            try:
+                # Git status komutunu çağırarak repodaki durumu kontrol et
+                status_output = subprocess.check_output(['git','status'], cwd=repo_path).decode('utf-8')
+
+                # Eğer çıktı boş değilse (yani değişiklik varsa)
+                if status_output.strip():
+                    print("Changes found.")
+                    return False
+            except subprocess.CalledProcessError as e:
+                print("An error occurred while checking git status:  ", e)
+
+    # Döngü tamamlandığında hiçbir değişiklik bulunmamış demektir
+    print("No changes found in any repository.")
+    return True
 
 
 def txt_read(folder_name):
