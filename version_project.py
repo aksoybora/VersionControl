@@ -6,9 +6,12 @@ import platform
 import subprocess
 from git import Repo
 
+# Define paths
 workspace_path = ".."
 repo_path = ".."
 
+
+# Main function to handle user commands: save, restore, and status.
 def main():
     try:
         if len (sys.argv) < 2:
@@ -61,6 +64,8 @@ def main():
     except Exception as e:
         print("Something went wrong:",e)
 
+
+# Switch the Git repository to the specified branch or tag.
 def git_checkout(repo, branch_name):
     try:
         repo.git.checkout(branch_name)
@@ -69,12 +74,12 @@ def git_checkout(repo, branch_name):
         print("Error: ", e)
 
 
+# Check if any repository in the list has uncommitted changes.
 def check_git_repos(repo_list):
     for elem in repo_list:
         repo = os.path.join(repo_path, elem)
 
         try:
-            # Git status komutunu çağırarak repodaki durumu kontrol et
             status_output = subprocess.check_output(['git','status'], cwd=repo).decode('utf-8')
 
             return not "nothing to commit, working tree clean" in status_output
@@ -82,6 +87,7 @@ def check_git_repos(repo_list):
             print("An error occurred while checking git status:  ", e)
 
 
+# Read version dependencies from CMakeLists.txt.
 def txt_read(folder_name):
     try:
         txt_file = "CMakeLists.txt"
@@ -95,14 +101,11 @@ def txt_read(folder_name):
                     curline = line.strip()
                     if bottom_line:
                         if "{CMAKE_CURRENT_SOURCE_DIR}" in curline:
-                            # Eşleşme bulundu, burada yapmak istediğiniz işlemi yapabilirsiniz
                             file_path = curline.replace("${CMAKE_CURRENT_SOURCE_DIR}/../", "").strip()
                             received_values.append(file_path)
                         else:
-                            # Başka bir ifade geldiğinde alt satırdan çık
                             bottom_line = False
                     elif curline.startswith("include_directories(${PROJECT_NAME} PUBLIC"):
-                        # "include_directories(${PROJECT_NAME} PUBLIC" ile başlayan satır bulundu
                         bottom_line = True
             a = {}
             for file_path in received_values:
@@ -120,10 +123,11 @@ def txt_read(folder_name):
         return None
     
 
+# Read the contents of the version.h file.
 def read_received_values(file_path):
     try:
         if platform.system() == "Windows":
-            file_path = file_path.replace("/", "\\")  # Ters slash'ları normal slash'a dönüştür
+            file_path = file_path.replace("/", "\\") 
 
         version_h_path = os.path.join(workspace_path,file_path)
         version_h_path = os.path.join(version_h_path,'version.h')
@@ -139,6 +143,7 @@ def read_received_values(file_path):
         return None
 
 
+# Extract MAJOR, MINOR, and PATCH version numbers from the version.h file.
 def get_versions(contents_of_version_h):
     try:
         if contents_of_version_h:
@@ -147,7 +152,6 @@ def get_versions(contents_of_version_h):
             patchv = re.search(r'#define\s\S+PATCH_VERSION\s+(\d+)', contents_of_version_h)
 
             if majorv and minorv and patchv:
-                # Değeleri alıp istenen formatta versiyon bilgisini oluşturma
                 version_info_d = f"{majorv.group(1)}.{minorv.group(1)}.{patchv.group(1)}"
                 return version_info_d
             else:
@@ -157,6 +161,7 @@ def get_versions(contents_of_version_h):
         return None
         
 
+# Retrieve version information from the include/version.h file.
 def get_version_info(folder_name):
     try:
         include_path = os.path.join(folder_name, "include")
@@ -167,13 +172,11 @@ def get_version_info(folder_name):
             if os.path.exists(version_path):
                 with open(version_path,"r") as file2:
                     content = file2.read()
-                    # Düzenli ifadeyle MAJOR_VERSION, MINOR_VERSION ve PATCH_VERSION değerlerini bulma
                     major = re.search(r'#define\s\S+MAJOR_VERSION\s+(\d+)', content)
                     minor = re.search(r'#define\s\S+MINOR_VERSION\s+(\d+)', content)
                     patch = re.search(r'#define\s\S+PATCH_VERSION\s+(\d+)', content)
 
                     if major and minor and patch:
-                        # Değeleri alıp istenen formatta versiyon bilgisini oluşturma
                         version_info = f"{major.group(1)}.{minor.group(1)}.{patch.group(1)}"
 
                     else:
@@ -191,6 +194,7 @@ def get_version_info(folder_name):
         return None
 
 
+# Save version and dependencies information to output.json.
 def save_to_json(folder_name, version_info, a={}):
     try:
         try:
